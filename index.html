@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grade Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --card: #13161e;
+      --border: #1e2330;
+      --accent: #c6f135;
+      --muted: #3a3f52;
+      --text: #e8eaf0;
+      --text-dim: #6b7280;
+      --red: #ff4d6d;
+      --red-bg: #1a0a0e;
+      --green-bg: #0a1a0d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg);
+      font-family: 'Syne', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(198,241,53,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(198,241,53,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 0 60px rgba(198,241,53,0.04), 0 20px 60px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .card-header {
+      padding: 2rem 2rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(198,241,53,0.1);
+      color: var(--accent);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(198,241,53,0.2);
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .weights {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.9rem;
+    }
+
+    .weight-pill {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      background: var(--muted);
+      color: var(--text-dim);
+    }
+
+    .weight-pill b { color: var(--accent); font-weight: 500; }
+
+    .tab-bar {
+      display: flex;
+      gap: 0.5rem;
+      padding: 1rem 2rem 0;
+    }
+
+    .tab-btn {
+      flex: 1;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.6rem 0.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: rgba(198,241,53,0.1);
+      border-color: rgba(198,241,53,0.3);
+      color: var(--accent);
+    }
+
+    .tab-btn:not(.active):hover {
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+
+    .card-body { padding: 1.5rem 2rem 2rem; }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 1.1rem;
+      padding: 0.75rem 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(198,241,53,0.1);
+    }
+
+    input[type="number"].error {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(255,77,109,0.12);
+    }
+
+    .field { margin-bottom: 1rem; }
+
+    .error-msg {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--red);
+      margin-top: 0.35rem;
+      display: none;
+    }
+
+    .btn {
+      width: 100%;
+      background: var(--accent);
+      color: #0d0f14;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      padding: 0.85rem;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      margin-top: 0.5rem;
+      box-shadow: 0 4px 20px rgba(198,241,53,0.2);
+    }
+
+    .btn:hover { background: #d4ff3a; box-shadow: 0 4px 28px rgba(198,241,53,0.35); }
+    .btn:active { transform: scale(0.98); }
+
+    .result-wrap { margin-top: 1.5rem; display: none; }
+
+    .result-wrap.visible {
+      display: block;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-box {
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid;
+    }
+
+    .result-box.pass { background: var(--green-bg); border-color: rgba(74,222,128,0.2); }
+    .result-box.fail { background: var(--red-bg);   border-color: rgba(255,77,109,0.2); }
+
+    .result-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+
+    .result-box.pass .result-label { color: #4ade80; }
+    .result-box.fail .result-label { color: var(--red); }
+
+    .result-grade {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .result-box.pass .result-grade { color: #4ade80; }
+    .result-box.fail .result-grade { color: var(--red); }
+
+    .result-status {
+      font-size: 0.78rem;
+      margin-top: 0.55rem;
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.1rem 0;
+    }
+
+    .info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .info-key {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .info-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-top: 0.25rem;
+    }
+
+    .tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+    }
+
+    .tag.pass { background: rgba(74,222,128,0.12); color: #4ade80; }
+    .tag.fail { background: rgba(255,77,109,0.12); color: var(--red); }
+
+    .sub-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.6rem;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      padding: 0.55rem 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <div class="card-header">
+    <div class="badge">Grade Calculator</div>
+    <h1>Know Your<br/><span>Grade</span></h1>
+    <div class="weights">
+      <div class="weight-pill">Prelim <b>30%</b></div>
+      <div class="weight-pill">Midterm <b>30%</b></div>
+      <div class="weight-pill">Finals <b>40%</b></div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-required" onclick="switchTab('required')">Required Finals</button>
+    <button class="tab-btn"        id="tab-overall"  onclick="switchTab('overall')">Overall Grade</button>
+  </div>
+
+  <div class="card-body">
+
+    <!-- Panel: Required Finals -->
+    <div class="panel active" id="panel-required">
+      <div class="field">
+        <label for="req-prelim">Prelim Grade</label>
+        <input type="number" id="req-prelim" placeholder="0 – 100" min="0" max="100" step="0.01"/>
+        <div class="error-msg" id="req-prelim-err">Enter a value between 0 and 100.</div>
+      </div>
+      <div class="field">
+        <label for="req-midterm">Midterm Grade</label>
+        <input type="number" id="req-midterm" placeholder="0 – 100" min="0" max="100" step="0.01"/>
+        <div class="error-msg" id="req-midterm-err">Enter a value between 0 and 100.</div>
+      </div>
+
+      <button class="btn" onclick="calcRequired()">Calculate Required Finals ↗</button>
+
+      <div class="result-wrap" id="req-result">
+        <div class="result-box" id="req-box">
+          <div class="result-label" id="req-label"></div>
+          <div class="result-grade" id="req-grade"></div>
+          <div class="result-status" id="req-status"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Overall Grade -->
+    <div class="panel" id="panel-overall">
+      <div class="field">
+        <label for="ov-prelim">Prelim Grade</label>
+        <input type="number" id="ov-prelim" placeholder="0 – 100" min="0" max="100" step="0.01"/>
+        <div class="error-msg" id="ov-prelim-err">Enter a value between 0 and 100.</div>
+      </div>
+      <div class="field">
+        <label for="ov-midterm">Midterm Grade</label>
+        <input type="number" id="ov-midterm" placeholder="0 – 100" min="0" max="100" step="0.01"/>
+        <div class="error-msg" id="ov-midterm-err">Enter a value between 0 and 100.</div>
+      </div>
+      <div class="field">
+        <label for="ov-finals">Finals Grade</label>
+        <input type="number" id="ov-finals" placeholder="0 – 100" min="0" max="100" step="0.01"/>
+        <div class="error-msg" id="ov-finals-err">Enter a value between 0 and 100.</div>
+      </div>
+
+      <button class="btn" onclick="calcOverall()">Calculate Overall Grade ↗</button>
+
+      <div class="result-wrap" id="ov-result">
+        <div class="result-box" id="ov-box">
+          <div class="result-label" id="ov-label"></div>
+          <div class="result-grade" id="ov-grade"></div>
+          <div class="result-status" id="ov-status"></div>
+
+          <hr class="divider"/>
+
+          <div class="info-row">
+            <div>
+              <div class="info-key">GWA Equivalent</div>
+              <div class="info-val" id="ov-gwa"></div>
+            </div>
+            <div class="tag" id="ov-tag"></div>
+          </div>
+
+          <div class="sub-row">
+            <span class="info-key">Remarks</span>
+            <span class="info-val" id="ov-remarks"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function getGWA(grade) {
+    if (grade >= 96) return { gwa: "1.00", remarks: "PASSED" };
+    if (grade >= 92) return { gwa: "1.25", remarks: "PASSED" };
+    if (grade >= 88) return { gwa: "1.50", remarks: "PASSED" };
+    if (grade >= 84) return { gwa: "1.75", remarks: "PASSED" };
+    if (grade >= 80) return { gwa: "2.00", remarks: "PASSED" };
+    if (grade >= 75) return { gwa: "2.25", remarks: "PASSED" };
+    if (grade >= 70) return { gwa: "2.50", remarks: "PASSED" };
+    if (grade >= 65) return { gwa: "2.75", remarks: "PASSED" };
+    if (grade >= 60) return { gwa: "3.00", remarks: "PASSED" };
+    return { gwa: "5.00", remarks: "FAILED" };
+  }
+
+  function validate(id, errId) {
+    const input = document.getElementById(id);
+    const err   = document.getElementById(errId);
+    const val   = parseFloat(input.value);
+    if (input.value.trim() === "" || isNaN(val) || val < 0 || val > 100) {
+      input.classList.add("error");
+      err.style.display = "block";
+      return null;
+    }
+    input.classList.remove("error");
+    err.style.display = "none";
+    return val;
+  }
+
+  function showResult(id) {
+    const el = document.getElementById(id);
+    el.classList.remove("visible");
+    void el.offsetWidth;
+    el.classList.add("visible");
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+    document.getElementById('req-result').classList.remove('visible');
+    document.getElementById('ov-result').classList.remove('visible');
+  }
+
+  function calcRequired() {
+    const prelim  = validate("req-prelim",  "req-prelim-err");
+    const midterm = validate("req-midterm", "req-midterm-err");
+    if (prelim === null || midterm === null) return;
+
+    const required = (60 - (prelim * 0.3 + midterm * 0.3)) / 0.4;
+    const rounded  = Math.ceil(required * 100) / 100;
+    const display  = rounded.toFixed(2);
+
+    const box    = document.getElementById("req-box");
+    const label  = document.getElementById("req-label");
+    const grade  = document.getElementById("req-grade");
+    const status = document.getElementById("req-status");
+
+    label.textContent = "Required Finals Grade";
+    grade.textContent = display;
+
+    if (required > 100) {
+      box.className      = "result-box fail";
+      status.textContent = "FAILED — Impossible to pass even with a perfect 100.";
+    } else {
+      box.className      = "result-box pass";
+      status.textContent = `You need at least ${display} in Finals to PASS.`;
+    }
+
+    showResult("req-result");
+  }
+
+  function calcOverall() {
+    const prelim  = validate("ov-prelim",  "ov-prelim-err");
+    const midterm = validate("ov-midterm", "ov-midterm-err");
+    const finals  = validate("ov-finals",  "ov-finals-err");
+    if (prelim === null || midterm === null || finals === null) return;
+
+    const overall  = (prelim * 0.3) + (midterm * 0.3) + (finals * 0.4);
+    const display  = overall.toFixed(2);
+    const { gwa, remarks } = getGWA(overall);
+    const isPassed = remarks === "PASSED";
+
+    document.getElementById("ov-box").className    = `result-box ${isPassed ? "pass" : "fail"}`;
+    document.getElementById("ov-label").textContent = "Overall Grade";
+    document.getElementById("ov-grade").textContent = display;
+    document.getElementById("ov-status").textContent = isPassed
+      ? `Congratulations — you passed with ${display}!`
+      : `Your overall grade of ${display} is below passing (60).`;
+
+    const gwaEl = document.getElementById("ov-gwa");
+    gwaEl.textContent = gwa;
+    gwaEl.style.color = isPassed ? "#4ade80" : "var(--red)";
+
+    const tagEl = document.getElementById("ov-tag");
+    tagEl.textContent = remarks;
+    tagEl.className   = `tag ${isPassed ? "pass" : "fail"}`;
+
+    const remEl = document.getElementById("ov-remarks");
+    remEl.textContent = remarks;
+    remEl.style.color = isPassed ? "#4ade80" : "var(--red)";
+
+    showResult("ov-result");
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    if (document.getElementById("panel-required").classList.contains("active")) calcRequired();
+    else calcOverall();
+  });
+</script>
+</body>
+</html>
